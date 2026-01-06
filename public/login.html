@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Registration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            background: white;
+            border-bottom-color: #667eea;
+        }
+        
+        .form-container {
+            padding: 40px;
+        }
+        
+        .form-section {
+            display: none;
+        }
+        
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .role-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .role-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .role-option input[type="radio"] {
+            display: none;
+        }
+        
+        .role-option:hover {
+            border-color: #667eea;
+        }
+        
+        .role-option input[type="radio"]:checked + label {
+            color: #667eea;
+        }
+        
+        .role-option input[type="radio"]:checked ~ .role-option {
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+        
+        .role-label {
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .role-icon {
+            font-size: 24px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.show {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('login')">Login</div>
+            <div class="tab" onclick="switchTab('register')">Register</div>
+        </div>
+        
+        <div class="form-container">
+            <!-- Login Form -->
+            <div id="login-form" class="form-section active">
+                <h2>Welcome Back</h2>
+                <p class="subtitle">Login to access your account</p>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    
+                    <button type="submit">Login</button>
+                </form>
+                
+                <div id="login-message" class="message"></div>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="register-form" class="form-section">
+                <h2>Create Account</h2>
+                <p class="subtitle">Register as Admin or Student</p>
+                
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-password">Password (min 6 characters)</label>
+                        <input type="password" id="register-password" minlength="6" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Select Role</label>
+                        <div class="role-selector">
+                            <div class="role-option" onclick="selectRole('admin')">
+                                <input type="radio" name="role" value="admin" id="role-admin" required>
+                                <label for="role-admin" class="role-label">
+                                    <span class="role-icon">👨‍💼</span>
+                                    <span>Admin</span>
+                                </label>
+                            </div>
+                            <div class="role-option" onclick="selectRole('student')">
+                                <input type="radio" name="role" value="student" id="role-student" required>
+                                <label for="role-student" class="role-label">
+                                    <span class="role-icon">🎓</span>
+                                    <span>Student</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit">Register</button>
+                </form>
+                
+                <div id="register-message" class="message"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tab) {
+            // Update tab styling
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update form visibility
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab + '-form').classList.add('active');
+            
+            // Clear messages
+            clearMessages();
+        }
+        
+        function selectRole(role) {
+            document.getElementById('role-' + role).checked = true;
+            document.querySelectorAll('.role-option').forEach(opt => {
+                opt.style.background = '';
+                opt.style.borderColor = '#e0e0e0';
+            });
+            event.currentTarget.style.background = '#f0f4ff';
+            event.currentTarget.style.borderColor = '#667eea';
+        }
+        
+        function showMessage(elementId, message, type) {
+            const msgElement = document.getElementById(elementId);
+            msgElement.textContent = message;
+            msgElement.className = 'message ' + type + ' show';
+            
+            setTimeout(() => {
+                msgElement.classList.remove('show');
+            }, 5000);
+        }
+        
+        function clearMessages() {
+            document.querySelectorAll('.message').forEach(msg => {
+                msg.classList.remove('show');
+            });
+        }
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const form = event.target;
+            
+            form.classList.add('loading');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store token
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('role', data.role);
+                    
+                    showMessage('login-message', 'Login successful! Redirecting...', 'success');
+                    
+                    // Redirect based on role
+                    setTimeout(() => {
+                        if (data.role === 'admin') {
+                            window.location.href = '/admin.html';
+                        } else {
+                            window.location.href = '/search.html';
+                        }
+                    }, 1000);
+                } else {
+                    showMessage('login-message', data.message, 'error');
+                    form.classList.remove('loading');
+                }
+            } catch (error) {
+                showMessage('login-message', 'Connection error. Please try again.', 'error');
+                form.classList.remove('loading');
+            }
+        }
+        
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const role = document.querySelector('input[name="role"]:checked')?.value;
+            const form = event.target;
+            
+            if (!role) {
+                showMessage('register-message', 'Please select a role', 'error');
+                return;
+            }
+            
+            form.classList.add('loading');
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('register-message', 'Registration successful! Please login.', 'success');
+                    form.reset();
+                    document.querySelectorAll('.role-option').forEach(opt => {
+                        opt.style.background = '';
+                        opt.style.borderColor = '#e0e0e0';
+                    });
+                    
+                    // Switch to login tab after 2 seconds
+                    setTimeout(() => {
+                        document.querySelectorAll('.tab')[0].click();
+                    }, 2000);
+                } else {
+                    showMessage('register-message', data.message, 'error');
+                }
+                
+                form.classList.remove('loading');
+            } catch (error) {
+                showMessage('register-message', 'Connection error. Please try again.', 'error');
+                form.classList.remove('loading');
+            }
+        }
+    </script>
+</body>
+</html>

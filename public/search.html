@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Search</title>
+    <link rel="stylesheet" href="certificate_search.css">
+</head>
+<body>
+
+    <div class="header">
+        <div class="user-info">
+            <div class="user-avatar" id="user-avatar">S</div>
+            <div>
+                <div class="username" id="username">Student</div>
+                <div class="user-role">Student Account</div>
+            </div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <h1>🔍 Certificate Search</h1>
+        <p class="subtitle">Search for student certificates by name</p>
+
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Enter student name..." onkeypress="handleKeyPress(event)">
+            <button onclick="searchStudent()" id="search-btn">Search</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Searching...</p>
+        </div>
+
+        <div class="result" id="result">
+            <div class="result-title" id="result-title">✅ Student Found!</div>
+            <div class="result-item"><strong>Name:</strong> <span id="student-name"></span></div>
+            <div class="result-item"><strong>Certificate:</strong> <span id="student-certificate"></span></div>
+            <div class="result-item"><strong>College:</strong> <span id="student-college"></span></div>
+            <div class="result-item"><strong>Link:</strong> <span id="student-link"></span></div>
+
+            <div class="action-buttons">
+                <button class="download-btn" onclick="downloadCertificate()">📥 Download Certificate</button>
+                <button class="visit-link-btn" onclick="visitLink()" id="visit-link-btn" style="display:none;">🔗 Visit Link</button>
+                <button class="search-again-btn" onclick="searchAgain()">Search Another</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="record-count">-</div>
+                <div class="stat-label">Available Records</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+let currentStudentName = '';
+let currentStudentLink = '';
+
+window.onload = function () {
+    checkAuth();
+    loadStatus();
+};
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+
+    if (!token) {
+        alert('Please login first');
+        window.location.href = '/';
+        return;
+    }
+
+    document.getElementById('username').textContent = username;
+    document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
+}
+
+async function loadStatus() {
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch('/api/status', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById('record-count').textContent = data.recordCount;
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function logout() {
+    localStorage.clear();
+    window.location.href = '/';
+}
+
+function handleKeyPress(e) {
+    if (e.key === 'Enter') searchStudent();
+}
+
+async function searchStudent() {
+    const name = document.getElementById('search-input').value.trim();
+    const token = localStorage.getItem('token');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const btn = document.getElementById('search-btn');
+
+    if (!name) return alert('Please enter a student name');
+
+    loading.classList.add('show');
+    result.classList.remove('show');
+    btn.disabled = true;
+
+    try {
+        const response = await fetch(`/api/search?name=${encodeURIComponent(name)}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        loading.classList.remove('show');
+
+        if (response.ok && data.success) {
+            currentStudentName = data.student.name;
+            currentStudentLink = data.student.link;
+            
+            document.getElementById('student-name').textContent = data.student.name;
+            document.getElementById('student-certificate').textContent = data.student.certificate || '-';
+            document.getElementById('student-college').textContent = data.student.college || '-';
+            
+            const linkElement = document.getElementById('student-link');
+            const visitLinkBtn = document.getElementById('visit-link-btn');
+            
+            if (data.student.link) {
+                linkElement.innerHTML = `<a href="${data.student.link}" target="_blank">${data.student.link}</a>`;
+                visitLinkBtn.style.display = 'inline-block';
+            } else {
+                linkElement.textContent = '-';
+                visitLinkBtn.style.display = 'none';
+            }
+            
+            document.getElementById('result-title').textContent = '✅ Student Found!';
+            result.className = 'result success show';
+        } else {
+            result.className = 'result error show';
+            document.getElementById('result-title').textContent = '❌ Not Found';
+            document.getElementById('student-name').textContent = '-';
+            document.getElementById('student-certificate').textContent = data.message || 'No record found';
+            document.getElementById('student-college').textContent = '-';
+            document.getElementById('student-link').textContent = '-';
+            document.getElementById('visit-link-btn').style.display = 'none';
+        }
+    } catch {
+        loading.classList.remove('show');
+        result.className = 'result error show';
+        document.getElementById('student-certificate').textContent = 'Connection error';
+        document.getElementById('visit-link-btn').style.display = 'none';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function downloadCertificate() {
+    if (!currentStudentName) return alert('No student selected');
+    
+    const token = localStorage.getItem('token');
+    const url = `/api/generate-certificate?name=${encodeURIComponent(currentStudentName)}`;
+    
+    console.log('Opening certificate for:', currentStudentName);
+    console.log('URL:', url);
+    
+    // Open in new tab with token in URL (since headers don't work with window.open)
+    window.open(url + `&token=${token}`, '_blank');
+}
+
+function visitLink() {
+    if (!currentStudentLink) return alert('No link available');
+    window.open(currentStudentLink, '_blank');
+}
+
+function searchAgain() {
+    currentStudentName = '';
+    currentStudentLink = '';
+    document.getElementById('result').classList.remove('show');
+    document.getElementById('search-input').value = '';
+    document.getElementById('visit-link-btn').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
